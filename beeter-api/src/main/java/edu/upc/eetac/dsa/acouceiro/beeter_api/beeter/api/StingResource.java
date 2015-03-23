@@ -139,6 +139,68 @@ public class StingResource {
 		return rb.build();
 	}
 	
+	
+	@GET
+	@Path("/search")
+	@Produces(MediaType.BEETER_API_STING_COLLECTION)
+	public StingCollection searchSting(@QueryParam("subject") String subject, @QueryParam("content") String content, @QueryParam("length") int length) {
+		
+		StingCollection stings = new StingCollection();
+		
+		Connection conn = null;
+		try {
+			conn = ds.getConnection();
+		} catch (SQLException e) {
+			throw new ServerErrorException("Could not connect to the database",
+					Response.Status.SERVICE_UNAVAILABLE);
+		}
+
+		PreparedStatement stmt = null;
+		
+		try {
+			stmt = conn.prepareStatement(searchGetStingByIdQuery());
+			
+			stmt.setString(1, "%"+subject+"%");
+			stmt.setString(2, "%"+content+"%");
+			
+			ResultSet rs = stmt.executeQuery();
+			long oldestTimestamp = 0;
+			int contador=0;
+			while (contador<=length-1 && rs.next()) {
+				contador++;
+				Sting sting = new Sting();
+				sting.setStingid(rs.getInt("stingid"));
+				sting.setUsername(rs.getString("username"));
+				sting.setAuthor(rs.getString("name"));
+				sting.setSubject(rs.getString("subject"));
+				sting.setContent(rs.getString("content"));
+				oldestTimestamp = rs.getTimestamp("last_modified").getTime();
+				stings.addSting(sting);
+			}
+			stings.setOldestTimestamp(oldestTimestamp);
+		} catch (SQLException e) {
+			throw new ServerErrorException(e.getMessage(),
+					Response.Status.INTERNAL_SERVER_ERROR);
+		} finally {
+			try {
+				if (stmt != null)
+					stmt.close();
+				conn.close();
+			} catch (SQLException e) {
+			}
+		}
+
+		
+		return stings;
+		
+	}
+	
+	
+	private String searchGetStingByIdQuery(){
+		return "select s.*, u.name from stings s, users u where u.username = s.username and subject like ? and content like ?";
+	}
+	
+	
 	private String INSERT_STING_QUERY = "insert into stings (username, subject, content) values (?, ?, ?)";
 	 
 	@POST

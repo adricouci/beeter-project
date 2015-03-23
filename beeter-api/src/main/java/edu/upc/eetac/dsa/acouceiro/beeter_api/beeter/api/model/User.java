@@ -1,6 +1,22 @@
 package edu.upc.eetac.dsa.acouceiro.beeter_api.beeter.api.model;
 
+import javax.ws.rs.core.Link;
+
+import java.util.List;
+
+import org.glassfish.jersey.linking.Binding;
+import org.glassfish.jersey.linking.InjectLink;
+import org.glassfish.jersey.linking.InjectLink.Style;
+import org.glassfish.jersey.linking.InjectLinks;
+
+import edu.upc.eetac.dsa.acouceiro.beeter_api.beeter.api.MediaType;
+import edu.upc.eetac.dsa.acouceiro.beeter_api.beeter.api.UserResource;
+
 public class User {
+	@InjectLinks({
+		@InjectLink(resource = UserResource.class, style = Style.ABSOLUTE, rel = "stings", title = "Latest stings", type = MediaType.BEETER_API_USER_COLLECTION),
+		@InjectLink(resource = UserResource.class, style = Style.ABSOLUTE, rel = "self edit", title = "User", type = MediaType.BEETER_API_USER, method = "getUser", bindings = @Binding(name = "username", value = "${instance.username}")) })
+	private List<Link> links;
 	private String username;
 	private String password;
 	private String name;
